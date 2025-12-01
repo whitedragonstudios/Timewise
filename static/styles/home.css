@@ -1,58 +1,254 @@
-/* Main header + form container */
-/* Main header container: stack header and form */
+/* ===================== HOME PAGE ===================== */
+
+/* ---------- HEADER & FORM ---------- */
 .main-header {
     display: flex;
-    flex-direction: column; /* stack elements vertically */
-    align-items: center;    /* center horizontally */
-    gap: 20px;              /* space between header and form */
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
     width: 100%;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
-/* Clock In form */
 #autoForm {
     display: flex;
     align-items: center;
-    gap: 10px;              /* space between input and button */
+    gap: 10px;
 }
 
-/* Input inside form */
 .largeTextbox {
     width: 250px;
     height: 50px;
     font-size: 1.2rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: rgba(255,255,255,0.02);
+    color: var(--content-text-color);
 }
 
-/* Clock In button */
 .largeButton {
     height: 50px;
     padding: 0 20px;
     font-size: 1.2rem;
+    background: var(--button-color);
+    color: var(--button-text-color);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.largeButton:hover {
+    background: var(--button-hover-color);
 }
 
 
-/* Content area with three columns */
+/* ---------- CONTENT AREA OVERRIDES ---------- */
 .content {
-    display: flex;
+    display: flex !important; /* override style.css */
     gap: 20px;
     width: 100%;
+    align-items: flex-start; /* Changed back to flex-start */
+    height: auto;
+    max-height: 80vh;
 }
 
-/* Left and right columns expand */
-.left-div, .right-div {
-    flex: 1;
+/* Left div: scales to content, dynamic font size */
+.left-div {
+    flex: 0 1 35% !important; /* override global flex:1 */
+    align-self: flex-start !important;
+    text-align: center;
+    line-height: 1.1;
+    height: auto !important;
 }
 
-/* Middle div shrink to fit picture */
+.left-div h2 {
+    font-size: clamp(1.8rem, 4.5vw, 3.2rem);
+}
+
+.left-div h3 {
+    font-size: clamp(1.1rem, 3vw, 1.6rem);
+}
+
+.left-div p {
+    font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+}
+
+/* Middle div: sticks to top, scales with image */
 .middle-div {
-    flex: 0 0 auto;  /* shrink to content */
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: flex-start;
 }
 
 .middle-div img {
-    max-width: 100%;
+    max-width: 256px;
+    width: 100%;
     height: auto;
     display: block;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+}
+
+/* Right div: fixed height with scroll */
+.right-div {
+    flex: 1 1 55% !important;
+    align-self: flex-start !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 0 !important; /* Important for flex scrolling */
+    max-height: 50vh !important; /* Set maximum height */
+    height: 50vh !important; /* Set fixed height */
+}
+
+/* Excel wrapper inside right div */
+.excel-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.excel-wrapper::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.excel-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(120,120,120,0.6);
+    border-radius: 8px;
+}
+
+.excel-wrapper::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.08);
+}
+
+/* Excel table */
+.excel-table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.excel-row {
+    display: table-row;
+}
+
+.excel-row.excel-header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--sidebar-color);
+    color: var(--sidebar-text-color);
+    font-weight: 700;
+}
+
+.excel-cell {
+    display: table-cell;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+    font-size: 0.92rem;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.excel-row .excel-cell:nth-child(3),
+.excel-row .excel-cell:nth-child(4) {
+    width: 90px;
+    text-align: center;
+}
+
+.excel-row:not(.excel-header):nth-child(even) .excel-cell {
+    background: rgba(255,255,255,0.02);
+}
+
+.excel-row:hover .excel-cell {
+    background: rgba(80,140,255,0.08);
+}
+
+/* Clock in/out colors */
+.clock-in { color: #2ecc71; font-weight: 600; }
+.clock-out { color: #e74c3c; font-weight: 600; }
+
+/* Animation for panels */
+@keyframes slideInUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+
+.left-div,
+.middle-div,
+.right-div {
+    animation: slideInUp 360ms ease both;
+}
+
+/* Weather sidebar tweaks */
+.weather-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 6px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Quote tweaks */
+.box ul { padding-left: 0; margin: 0; }
+
+.quote {
+    list-style: none;
+    text-align: left;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    padding-left: 1.4rem;
+    position: relative;
+}
+
+.quote::before {
+    content: "★";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: gold;
+    font-size: 1.1rem;
+}
+
+.author {
+    width: 100%;
+    text-align: right;
+    font-size: 0.95rem;
+    font-style: italic;
+    margin-top: 6px;
+}
+
+/* Mobile responsive */
+@media (max-width: 900px) {
+    .content {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .left-div,
+    .middle-div,
+    .right-div {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .excel-wrapper {
+        height: 40vh;
+    }
+
+    .excel-table {
+        min-width: 480px;
+    }
 }

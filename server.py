@@ -52,10 +52,8 @@ def index():
 @frontend.route('/home', methods=['GET', 'POST'])
 def home():
     global recent_list
-    
     employee = None
     idscan = None
-    
     if request.method == 'POST':
         idscan = request.form.get('idscan')
         if not idscan:
@@ -64,7 +62,6 @@ def home():
             try:
                 employee = Person(idscan, recent_list)
                 message_parser({"success":[f"{idscan} Clocked {employee.io}"]})
-                
                 # Save last successful scan ID to session
                 session['last_scan_id'] = idscan
                 

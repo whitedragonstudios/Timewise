@@ -18,7 +18,7 @@ class Person():
             # if data is returned the rest of the methods are called.
             self.assign(data)
             self.update_DB()
-            self.recent_list(25)
+            self.recent_list(50)
         else:
             # if the id is not valid default_person provides valid feedback to flask
             data = Default_Person(self.recent, self.id)
@@ -105,7 +105,8 @@ class Person():
         time_str = time.strftime("%I:%M %p %d-%m") #Format date time object to string
         direction = "==>" if action == "Clock In" else "<==" # connditional to determine which arrow to use.
         self.io = "IN"if action == "Clock In" else "OUT" # conditional to determine which word to use.
-        self.return_data = f"{self.io} {time_str} {direction} {data[0][0]} {data[0][1]}"
+        #self.return_data = f"{self.io} {time_str} {direction} {data[0][0]} {data[0][1]}"
+        self.return_data = {"io": self.io, "time": time_str, "fname": data[0][0], "lname": data[0][1]}
         print(self.return_data)
         return self.return_data # returns formatted data which can be added to recent list.
 

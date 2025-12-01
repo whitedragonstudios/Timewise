@@ -112,7 +112,7 @@
 
             <div class="content"> 
                 <div class="left-div">
-                    <h2>{{scan.fname}}, {{scan.lname}}</h2>
+                    <h2>{{scan.fname}} {{scan.lname}}</h2>
                     <h3>{{scan.idnumber}} </h3>
                     <p>{{scan.role}} -- {{scan.position}}<br>{{scan.department}}</p>
                     <h3>{{time}}</h3>
@@ -124,12 +124,26 @@
                 </div>
 
                 <div class="right-div recent">
-                    <h1> Recent </h1>
-                    <ul>{% for person in recent_people %}
-                            <li>{{ person }}</li>
-                    {% endfor %} </ul>
-
-
+                    <div class="excel-wrapper">
+                        <div class="excel-table">
+                            <!-- HEADER ROW -->
+                            <div class="excel-row excel-header">
+                                <div class="excel-cell">First Name</div>
+                                <div class="excel-cell">Last Name</div>
+                                <div class="excel-cell">In/Out</div>
+                                <div class="excel-cell">Time</div>
+                            </div>
+                            <!-- DATA ROWS -->
+                            {% for person in recent_people %}
+                            <div class="excel-row">
+                                <div class="excel-cell">{{ person.fname }}</div>
+                                <div class="excel-cell">{{ person.lname }}</div>
+                                <div class="excel-cell">{{ person.io }}</div>
+                                <div class="excel-cell">{{ person.time}}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
