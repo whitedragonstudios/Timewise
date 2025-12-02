@@ -6,6 +6,8 @@ from classWeather import weather_report
 from classHandler import Handler
 from classPerson import Person, Default_Person
 from classReports import Reports
+from classSearch import Search
+from classMailer import Mailer
 import services
 
 
@@ -205,7 +207,7 @@ def search():
         field = request.form.get("field")
         time_entries = request.form.get("time_entries", 10)
         if search is not None:
-            se = classScheduler.search_event(search, field, time_entries)
+            se = Search.search_event(search, field, time_entries)
             search_result = se.results
         
             # Save to session
@@ -216,9 +218,9 @@ def search():
         if request.form.get("preview"):
             pass
         if request.form.get("send-now"):
-            classScheduler.mailer().send_now()
+            Mailer().send_now()
         if request.form.get("save-now"):
-            classScheduler.mailer().save_report()
+            Mailer().save_report()
         
     return render_template("search.html", 
         cf = config,
@@ -234,9 +236,9 @@ def reports():
         if request.form.get("preview"):
             pass
         if request.form.get("send-now"):
-            classScheduler.mailer().send_now()
+            Mailer().send_now()
         if request.form.get("save-now"):
-            classScheduler.mailer().save_report()
+            Mailer().save_report()
         
     return render_template("reports.html", 
         cf = config,

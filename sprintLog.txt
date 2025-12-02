@@ -11,7 +11,7 @@ Seventh Sprint 12/2 - present
 2) Rename classes inside Scehduler to own files
 3) Make class for scheduling
 4) Add redis to install process 
-5) 
+5) Add news and weather to database instead of storing in local memory
 
 Sixth Sprint 11/21 - 12/2/25
 1) Make class to handle emailing tasks

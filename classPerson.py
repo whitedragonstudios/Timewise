@@ -60,7 +60,7 @@ class Person():
             ORDER BY clock_in DESC LIMIT 1;""")
         # prevent double scans by getting current time
         now = dt.now(timezone.utc)
-        debounce = 1
+        debounce = 3
         # If clock in or clock out are not in the database insert new entry using clock in
         if not latest:
             self.handle.send_command(f"INSERT INTO timesheet_database (employee_id, clock_in) VALUES ({self.id}, NOW());")
@@ -107,7 +107,7 @@ class Person():
         self.io = "IN"if action == "Clock In" else "OUT" # conditional to determine which word to use.
         #self.return_data = f"{self.io} {time_str} {direction} {data[0][0]} {data[0][1]}"
         self.return_data = {"io": self.io, "time": time_str, "fname": data[0][0], "lname": data[0][1]}
-        print(self.return_data)
+        #print(self.return_data)
         return self.return_data # returns formatted data which can be added to recent list.
 
 
