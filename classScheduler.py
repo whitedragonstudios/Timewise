@@ -278,6 +278,7 @@ class mailer():
             mailing_list[freq].append(email)
         return mailing_list
 
-class present():
+class Auto_send():
     def __init__(self):
-        pass
+        self.userhandle = Handler("user")
+        

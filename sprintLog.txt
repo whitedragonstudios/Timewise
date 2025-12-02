@@ -1,9 +1,33 @@
 Future Backlog
->> put options back into setup to allow clean install without erasing existing databases.
 >> put security features to only allow admin to use danger zone and password protect entire settings page.
+>> bug still getting double scans sometimes.
 
+Eight Sprint planning
+1) Make a PyQT installer to handle inital setup and default settings
+2) Make docker config
 
-Fifth Spring 11/14 - present
+Seventh Sprint 12/2 - present
+1) Impliment connection to redis
+2) Rename classes inside Scehduler to own files
+3) Make class for scheduling
+4) Add redis to install process 
+5) 
+
+Sixth Sprint 11/21 - 12/2/25
+1) Make class to handle emailing tasks
+2) Create functionality to send now or save reports
+3) Make a sceen for live reports to display
+** Split Search and Report into two seperate pages.
+4) Update Home screen to look more organized.
+
+1) classScheduler handles emailing and report generation.
+** Should split this into different files for modularity
+2) Buttons to send and save reports made. Need to automate.
+3) Made a table for reports and home to show live reports.
+4) see 3
+** For scale need to impliment redis and celery for task scheduling emails.
+
+Fifth Sprint 11/14 - 11/21/25
 1) Refactor Handler.update_config to handle all update procdesures. 
 2) Make Handler work with fewer parameters.
 3) break out routes to their own files and use server as a app factory
@@ -11,6 +35,8 @@ Fifth Spring 11/14 - present
 5) intergrate server.py to main.py
 6) Update flow diagrams
 
+
+Review:
 1) update_config made universal. changed db setup to match key value partern
 2) handler only takes a porfile parameter, and an optional database paramater
 ** Need to intergate password encryption to handler
@@ -18,6 +44,9 @@ Fifth Spring 11/14 - present
 4) services for server seperated conditionals remain for readability but complex actions are abstracted to services
 5) server.py added to main which checks config status and handles install process.
 6) It may be better to break down flow diagrams by output section
+
+>> put options back into setup to allow clean install without erasing existing databases.
+** moved to settings page. Install does not erase anything buttons in settings allow to erase databses.
 
 Fourth Sprint 11/3 - 11/12/25
 1) intergrate server.py and settings.py into one script.
