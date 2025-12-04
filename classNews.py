@@ -1,4 +1,5 @@
 import requests
+from classHandler import Handler
 
 # This class gets news from an API and processes it for display in flask and js
 class News_Report():
@@ -72,13 +73,49 @@ class News_Report():
         return parsed_news
 
 
+    # Adds news articles to database.
+    def save_news(self, articles):
+        user_handle = Handler("user")
+        try:
+            user_handle.send_command("DELETE FROM news_database")
+            for item in articles:
+                try:
+                    user_handle.send_command(
+                        "INSERT INTO news_database (src, art, url) VALUES (%s, %s, %s)",
+                        (item["src"], item["art"], item["url"]))
+                    print(f"Article from {item['src']} added to database")
+                except Exception as e:
+                    print(f"Error inserting article from {item.get('src', 'UNKNOWN')}: {e}")
+        except Exception as e:
+            print(f"Error preparing news_database table: {e}")
+
+        
     # Flow control for the class calls both methods and passes data between them
     def update_news(self):
-        news_response = self.get_news()
-        articles = self.parse_news(news_response)
-        return articles
+        try:
+            news_response = self.get_news()
+            articles = self.parse_news(news_response)
+            self.save_news(articles)
+            return articles
+        except Exception as e:
+            print("Error updating news:", e)
+            return []
+
     
-    
+    # Gets news from the database NOTE is not included in autorun process
+    def get_news(self):
+        user_handle = Handler("user")
+        try:
+            data = user_handle.send_query("SELECT * FROM news_database")
+            news_sorted = []
+            for item in data:
+                news_sorted.append(dict(item))
+            return news_sorted
+        except Exception as e:
+            print("Error reading news from database:", e)
+            return []
+        
+
     # Return error data structure when API fails
     def error_data(self):
         return {
@@ -104,3 +141,6 @@ class News_Report():
                 }
             ]
         }
+    
+# save_news and get_news are for future implimentations of the app. If a single server is run 
+# and multiple client side scanners are deployed news can be accessed via database to reduce API calls.
