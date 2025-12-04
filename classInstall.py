@@ -217,8 +217,10 @@ class Postgre_Install:
                     "CREATE TABLE timesheet_database (id SERIAL PRIMARY KEY, employee_id INTEGER NOT NULL "
                     "REFERENCES people_database(employee_id) ON DELETE CASCADE, clock_in TIMESTAMPTZ DEFAULT NOW(), "
                     "clock_out TIMESTAMPTZ, work_date DATE DEFAULT CURRENT_DATE);"
-                )
-            }
+                ),
+                "news_database" : ("CREATE TABLE news_database (id SERIAL PRIMARY KEY, src TEXT, art TEXT, url TEXT);"),
+                "weather_database" : ("CREATE TABLE weather_database (key VARCHAR(255) PRIMARY KEY, value VARCHAR(255));")
+                }
 
             for name, command in tables.items():
                 self.user_handle.send_command(sql.SQL(command))

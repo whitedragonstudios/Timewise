@@ -2,7 +2,7 @@ from classHandler import Handler
 
 
 
-class Auto_send():
+class Autosend():
     def __init__(self):
         self.userhandle = Handler("user")
         
