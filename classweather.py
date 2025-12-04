@@ -92,7 +92,7 @@ class weather_report():
         except requests.exceptions.RequestException as e:
             print("ERROR: weather.get_weather >>> api request >>>", e)
             WEATHER_response = self.error_data()
-        #print(WEATHER_response)
+        print(WEATHER_response)
         # Returns full dict
         return WEATHER_response
     
