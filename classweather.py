@@ -4,21 +4,23 @@ from classHandler import Handler
 
 # weather report uses an api to send weather to the flask interface
 class weather_report():
-    def __init__(self, city_name, weather_key):
+    def __init__(self, city_name, weather_key, autorun = True, gps_check = True):
         # city name and weather key come from config database.
         self.city_name = city_name
         self.weather_key = weather_key
-        # API needs gps coordinates so city has to be passed to get_gps
-        gps = self.get_gps(self.city_name)
-        self.longitude = gps[0] or -74.0060152
-        self.latitude = gps[1] or 40.7127281
-        self.city = gps[2] or "New York"
-        self.state = gps[3] or "NY"
-        self.country = gps[4] or "US"
-        # Once gps is retrieved a second call to get_weather is performed
-        self.assign()
-        # config database is updated with changes to match new city
-        self.update_config()
+        if gps_check == True:
+            # API needs gps coordinates so city has to be passed to get_gps
+            gps = self.get_gps(self.city_name)
+            self.longitude = gps[0] or -74.0060152
+            self.latitude = gps[1] or 40.7127281
+            self.city = gps[2] or "New York"
+            self.state = gps[3] or "NY"
+            self.country = gps[4] or "US"
+        if autorun == True:
+            # Once gps is retrieved a second call to get_weather is performed
+            self.assign()
+            # config database is updated with changes to match new city
+            self.update_config()
 
 
     # Get gps passes city to return long and lat
