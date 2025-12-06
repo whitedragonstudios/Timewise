@@ -19,6 +19,8 @@ class weather_report():
         if autorun == True:
             # Once gps is retrieved a second call to get_weather is performed
             self.assign()
+            # update database with new weather data
+            self.update_database
             # config database is updated with changes to match new city
             self.update_config()
 
@@ -128,8 +130,10 @@ class weather_report():
             self.humid = "N/A"
             self.clouds = "N/A"
             self.wind = "N/A"
+
+    def update_database(self):
         stored_weather = {"description": self.description, "icon":self.icon, "feel":self.feel, "temp":self.temp,"humid":self.humid, "clouds":self.clouds,"wind":self.wind}
-        if stored_weather["description"] is not "API Error":
+        if stored_weather["description"] != "API Error":
             user_handle = Handler("user")
             user_handle.send_command("DELETE FROM weather_database")
             for k,v in stored_weather.items():

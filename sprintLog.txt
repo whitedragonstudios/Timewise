@@ -2,7 +2,7 @@ Future Backlog
 >> put security features to only allow admin to use danger zone and password protect entire settings page.
 >> bug still getting double scans sometimes.
 
-Eight Sprint planning
+Eighth Sprint planning
 1) Make a PyQT installer to handle inital setup and default settings
 2) Make docker config
 
