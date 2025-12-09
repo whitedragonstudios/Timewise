@@ -4,55 +4,25 @@ from classHandler import Handler
 
 # weather report uses an api to send weather to the flask interface
 class weather_report():
-    def __init__(self, city_name, weather_key):
+    def __init__(self, city_name, weather_key, autorun = True, gps_check = True):
         # city name and weather key come from config database.
         self.city_name = city_name
         self.weather_key = weather_key
-        # API needs gps coordinates so city has to be passed to get_gps
-        gps = self.get_gps(self.city_name)
-        self.longitude = gps[0] or -74.0060152
-        self.latitude = gps[1] or 40.7127281
-        self.city = gps[2] or "New York"
-        self.state = gps[3] or "NY"
-        self.country = gps[4] or "US"
-        # Once gps is retrieved a second call to get_weather is performed
-        try:
-            data = self.get_weather()
-            # Check if we got a valid response with weather data
-            if 'weather' not in data or 'main' not in data:
-                print(f"ERROR: Invalid weather API response: {data}")
-                data = self.error_data()
-        except Exception as e:
-            print("ERROR: weather.__init__ >>> get_weather >>>", e)
-            data = self.error_data()
-        
-        # response is formatted for direct output.
-        try:
-            self.description = data['weather'][0]['description'].title()
-            self.icon = data['weather'][0]['icon']
-            if not self.icon.endswith('.png'):
-                self.icon += ".png"
-            self.feel = int((data['main']['feels_like']) * 1.8 - 459.67)
-            min_temp = int((data['main']['temp_min']) * 1.8 - 459.67)
-            max_temp = int((data['main']['temp_max']) * 1.8 - 459.67)
-            self.temp = f"{min_temp} - {max_temp}"
-            self.humid = data['main']['humidity']
-            self.clouds = data['clouds']['all']
-            dir = self.wind_direction(data['wind']['deg'])
-            self.wind = f"{dir} {int(data['wind']['speed'])}mp/h"
-        except (KeyError, TypeError, ValueError) as e:
-            print(f"ERROR: weather.__init__ >>> parsing weather data >>> {e}")
-            # Set default error values
-            self.description = "API Error"
-            self.icon = "01d.png"
-            self.feel = "N/A"
-            self.temp = "N/A"
-            self.humid = "N/A"
-            self.clouds = "N/A"
-            self.wind = "N/A"
-        
-        # config database is updated with changes to match new city
-        self.update_config()
+        if gps_check == True:
+            # API needs gps coordinates so city has to be passed to get_gps
+            gps = self.get_gps(self.city_name)
+            self.longitude = gps[0] or -74.0060152
+            self.latitude = gps[1] or 40.7127281
+            self.city = gps[2] or "New York"
+            self.state = gps[3] or "NY"
+            self.country = gps[4] or "US"
+        if autorun == True:
+            # Once gps is retrieved a second call to get_weather is performed
+            self.assign()
+            # update database with new weather data
+            self.update_database
+            # config database is updated with changes to match new city
+            self.update_config()
 
 
     # Get gps passes city to return long and lat
@@ -123,6 +93,55 @@ class weather_report():
             print("ERROR: (wind_direction) assigning >>> wind_dir")
         # print("CF --- wind_direction RUN")
         return cardinal
+    
+
+    def assign(self):
+        try:
+            data = self.get_weather()
+            # Check if we got a valid response with weather data
+            if 'weather' not in data or 'main' not in data:
+                print(f"ERROR: Invalid weather API response: {data}")
+                data = self.error_data()
+        except Exception as e:
+            print("ERROR: weather.__init__ >>> get_weather >>>", e)
+            data = self.error_data()
+        
+        # response is formatted for direct output.
+        try:
+            self.description = data['weather'][0]['description'].title()
+            self.icon = data['weather'][0]['icon']
+            if not self.icon.endswith('.png'):
+                self.icon += ".png"
+            self.feel = int((data['main']['feels_like']) * 1.8 - 459.67)
+            min_temp = int((data['main']['temp_min']) * 1.8 - 459.67)
+            max_temp = int((data['main']['temp_max']) * 1.8 - 459.67)
+            self.temp = f"{min_temp} - {max_temp}"
+            self.humid = data['main']['humidity']
+            self.clouds = data['clouds']['all']
+            dir = self.wind_direction(data['wind']['deg'])
+            self.wind = f"{dir} {int(data['wind']['speed'])}mp/h"
+        except (KeyError, TypeError, ValueError) as e:
+            print(f"ERROR: weather.__init__ >>> parsing weather data >>> {e}")
+            # Set default error values
+            self.description = "API Error"
+            self.icon = "01d.png"
+            self.feel = "N/A"
+            self.temp = "N/A"
+            self.humid = "N/A"
+            self.clouds = "N/A"
+            self.wind = "N/A"
+
+    def update_database(self):
+        stored_weather = {"description": self.description, "icon":self.icon, "feel":self.feel, "temp":self.temp,"humid":self.humid, "clouds":self.clouds,"wind":self.wind}
+        if stored_weather["description"] != "API Error":
+            user_handle = Handler("user")
+            user_handle.send_command("DELETE FROM weather_database")
+            for k,v in stored_weather.items():
+                user_handle.send_command("INSERT INTO weather_database (key, value) VALUES %s, %s", (k,v))
+        else:
+            print("Error: Using old database values for weather")
+
+
     def error_data(self):
         return {
             "weather": [
@@ -144,4 +163,4 @@ class weather_report():
                 "deg": 0,
                 "speed": 0
             }
-        }
+        } 

@@ -12,13 +12,33 @@ import services
 
 
 def preload_data():
+    config = None
+    weather_data = None
+    news = None
+    quoteOTDay = ["Welcome to TimeWise", "System"]
     try:
         config = classSettings.Setting()
-        weather_data = weather_report(config.city, config.weather_key)
-        news = News_Report(config.country, config.news_key)
-        quoteOTDay = quote_generator().QotD
+        print("Config loaded")
     except Exception as e:
-        print("Error preloading data")
+        print(f"Error loading config: {e}")
+        raise RuntimeError("Critical Error: Database not initialized. ")
+    try:
+        weather_data = weather_report(config.city, config.weather_key)
+        print("Weather data loaded")
+    except Exception as e:
+        print(f"Weather unavailable: {e}")
+    
+    try:
+        news = News_Report(config.country, config.news_key)
+        print("News loaded")
+    except Exception as e:
+        print(f"News unavailable: {e}")
+    
+    try:
+        quoteOTDay = quote_generator().QotD
+        print("Quotes loaded")
+    except Exception as e:
+        print(f"Quote unavailable: {e}")
     return config, weather_data, news, quoteOTDay
 
 
@@ -207,7 +227,7 @@ def search():
         field = request.form.get("field")
         time_entries = request.form.get("time_entries", 10)
         if search is not None:
-            se = Search.search_event(search, field, time_entries)
+            se = Search(search, field, time_entries)
             search_result = se.results
         
             # Save to session
