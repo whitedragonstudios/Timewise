@@ -4,6 +4,7 @@ from io import BytesIO
 from classHandler import Handler
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+from email.mime.text import MIMEText
 from datetime import date, timedelta
 
 # for emailing to work do this on your Gmail account
@@ -60,8 +61,6 @@ class Mailer():
             if clock_out is not None:
                 clock_out_time = clock_out.replace(tzinfo=None)
 
-            
-
             cleaned_data.append((work_date, clock_in_time, clock_out_time) + row[3:])
         columns = ["work_date", "clock_in", "clock_out", "id", "first_name", 
                 "last_name", "email", "phone", "role", "position", "department"]
@@ -73,6 +72,22 @@ class Mailer():
             df.to_excel(writer, index=False)
         output.seek(0)
         return output
+
+
+    def no_clockout(self):
+        today = self.today.strftime("%Y-%m-%d")
+        query = f"""SELECT p.first_name, p.last_name, p.employee_id, t.work_date, t.clock_in, t.notes
+            FROM timesheet_database t JOIN people_database p ON p.employee_id = t.employee_id
+            WHERE t.work_date =  '{today}' AND t.notes ILIKE '%no clock out%'
+            ORDER BY t.work_date, p.first_name;"""
+        data = self.user_handle.send_query(query)
+        if not data:
+            return "All employees clocked out properly."
+        lines = ["Employees With No Recorded Clock-Out:", ""]
+        for first, last, id, date, clock_in in data:
+            clock_in_str = clock_in.replace(tzinfo=None).strftime("%H:%M:%S")
+            lines.append(f" - {first} {last} | {id} | Date: {date} | In: {clock_in_str}")
+        return "\n".join(lines)
 
 
     def save_report(self):
@@ -87,6 +102,15 @@ class Mailer():
             with open(file_path, "wb") as f:
                 f.write(report_bytes.getbuffer())
             print(f"Excel file saved at {file_path}")
+
+
+    def get_emails(self):
+        data = self.user_handle.send_query("SELECT * FROM email_list;")
+        mailing_list = {"now":[], "daily": [], "weekly": [], "monthly": []}
+        for email, freq in data:
+            mailing_list[freq].append(email)
+        return mailing_list
+
 
     def send_now(self):
         mail_list = self.get_emails()
@@ -109,6 +133,8 @@ class Mailer():
                     msg['To'] = receiver
                     msg['Subject'] = f"TimeWise {freq.title()} Report {self.today}"
 
+                    msg.attach(MIMEText(self.no_clockout(), "plain"))
+
                     part = MIMEApplication(report_bytes.getvalue(),
                                         Name=f"timesheet_{self.today:%m-%d-%Y}.xlsx")
                     part['Content-Disposition'] = f'attachment; filename="timesheet_{self.today:%m-%d-%Y}.xlsx"'
@@ -120,10 +146,3 @@ class Mailer():
                     except Exception as e:
                         print(f"Error sending email to {receiver}: {e}")
         server.quit()
-
-    def get_emails(self):
-        data = self.user_handle.send_query("SELECT * FROM email_list;")
-        mailing_list = {"now":[], "daily": [], "weekly": [], "monthly": []}
-        for email, freq in data:
-            mailing_list[freq].append(email)
-        return mailing_list

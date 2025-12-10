@@ -396,7 +396,8 @@ class Postgre_Install:
                     employee_id INTEGER NOT NULL REFERENCES people_database(employee_id) ON DELETE CASCADE,
                     clock_in TIMESTAMPTZ DEFAULT NOW(),
                     clock_out TIMESTAMPTZ,
-                    work_date DATE DEFAULT CURRENT_DATE
+                    work_date DATE DEFAULT CURRENT_DATE,
+                    notes TEXT
                 );
             """,
             "news_database": """

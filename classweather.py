@@ -3,7 +3,7 @@ from classHandler import Handler
 
 
 # weather report uses an api to send weather to the flask interface
-class weather_report():
+class Weather_Report():
     def __init__(self, city_name, weather_key, autorun = True, gps_check = True):
         # city name and weather key come from config database.
         self.city_name = city_name

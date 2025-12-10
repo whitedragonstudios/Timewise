@@ -3,9 +3,11 @@ from classRedis import redis_handle
 from celery import Celery
 from celery.schedules import crontab
 from datetime import datetime as dt, date
+from classMailer import Mailer
+from classNews import News_Report
+from classWeather import Weather_Report
 
-
-class Autosend():
+class Scheduler():
     def __init__(self):
         #self.userhandle = Handler("user")
         broker_url, backend_url, redis_handler = redis_handle()
@@ -35,7 +37,59 @@ class Autosend():
         print(f"Celery app created: {app.main}")
         return app
     
+    @celery_app.task
+    def send_email(self):
+        try:
+            print("Sending Emails")
+            email = Mailer()
+            email.send_now()
+            return {'timestamp': dt.utcnow().isoformat(),'status': 'success'}
+        except Exception as e:
+            print(f"Error sending emails: {e}")
+            raise
 
+    def get_weather(self):
+        try:
+            print("Refreshing weather")
+            weather = Weather_Report(autorun = True, gps_check = False)
+            weather.assign()
+            weather.update_database()
+            return {'timestamp': dt.utcnow().isoformat(), 'status': 'success'}
+        except Exception as e:
+            print(f"Error refreshing weather: {e}")
+            raise
+
+    def get_news():
+        try:
+            print("Refreshing news")
+            news = News_Report(0)
+            news.get_news()
+            return {'timestamp': dt.utcnow().isoformat(), 'status': 'success'}
+        except Exception as e:
+            print(f"Error refreshing news: {e}")
+            raise
+
+    def clockout_all():
+        user_handle = Handler("user")
+
+        try:
+            user_handle.send_command("""UPDATE timesheet_database
+                SET clock_out = (work_date + TIME '00:00')::timestamptz,
+                notes = 'no clock out'
+                WHERE clock_out IS NULL;""")
+        except Exception as e:
+            print("Error getting clocked in")
+
+        try: 
+            not_clocked_out = user_handle.send_query("""
+            SELECT t.work_date, t.clock_in, p.first_name, p.last_name p.employee_id,
+            FROM people_database p JOIN timesheet_database t
+            ON p.employee_id = t.employee_id WHERE t.notes IS "no clock out"
+            ORDER BY t.work_date DESC , t.clock_in DESC;""")
+        except Exception as e:
+            print("Error getting clocked in")
+        print(not_clocked_out)
+        return not_clocked_out
 
 
     def run(self):
