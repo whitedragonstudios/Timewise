@@ -1,10 +1,10 @@
 import redis
-from typing import Optional
+from typing import Optional, Tuple
 import logging
 
-# Setup logging for Redis operations
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
+default_host = "localhost"
+default_port = 6379
 
 
 class RedisConnectionHandler: 
@@ -27,9 +27,10 @@ class RedisConnectionHandler:
             socket_connect_timeout=5,
             retry_on_timeout=True,
             health_check_interval=30)
+        
         # Create Redis client using the connection pool
-        self._client: Optional[redis.Redis] = None
-        logger.info(f"Redis configured: {self.host}:{self.port} (db={self.db})")
+        self._client = None
+        print(f"Redis configured: {self.host}:{self.port} (db={self.db})")
         # Get url of redis server
         if self.password:
             url = f"redis://:{self.password}@{self.host}:{self.port}/{self.db}"
@@ -41,7 +42,7 @@ class RedisConnectionHandler:
     def client(self):
         if self._client is None:
             self._client = redis.Redis(connection_pool=self.pool)
-            logger.info("Redis client initialized")
+            print("Redis client initialized")
         return self._client
 
     
@@ -49,13 +50,13 @@ class RedisConnectionHandler:
         try:
             response = self.client.ping()
             if response:
-                logger.info("Redis connection successful")
+                print("Redis connection successful")
             else:
-                logger.error("Redis connection failed (no PONG received)")
+                print("Redis connection failed (no PONG received)")
         except redis.ConnectionError as e:
-            logger.error(f"Redis connection error: {e}")
+            print(f"Redis connection error: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error testing Redis: {e}")
+            print(f"Unexpected error testing Redis: {e}")
         try:
             info = self.client.info()
             connection_info = {
@@ -69,46 +70,44 @@ class RedisConnectionHandler:
                 print(f"{k} ==> {v}")
             return connection_info
         except Exception as e:
-            logger.error(f"Error getting Redis stats: {e}")
+            print(f"Error getting Redis stats: {e}")
             return {}
     
 
     def close(self):
-        # redis_handler = RedisConnectionHandler()
-        # redis_handler.close()  # Clean shutdown
         try:
             if self._client:
                 self._client.close()
-                logger.info("Redis client closed")
+                print("Redis client closed")
             if self.pool:
                 self.pool.disconnect()
-                logger.info("Redis connection pool disconnected")
+                print("Redis connection pool disconnected")
         except Exception as e:
-            logger.error(f"Error closing Redis connection: {e}")
+            print(f"Error closing Redis connection: {e}")
 
 
-def redis_handler():
-    handle = RedisConnectionHandler()
-    logger.info("Setting up Redis for Celery.")
-    # Test connection
+def redis_handle(host = default_host, port = default_port, db = 0, password = None):
+    print("Setting up Redis handler.")
+    error_data = None, None, None
     try:
-        response = handle.get_info()
+        handler = RedisConnectionHandler(host=host, port=port, db=0, password=password)
+        # Test connection
+        response = handler.get_info()
         if response:
-            logger.info("Redis connection verified for Celery")    
-            broker_url = handle.url
-            backend_url = handle.url
-            
-            logger.info(f"Celery broker URL: {broker_url}")
-            logger.info(f"Celery backend URL: {backend_url}")
-            
-            return broker_url, backend_url
+            broker_url = handler.url
+            backend_url = handler.url
+            print(f"Celery broker URL: {broker_url}")
+            print(f"Celery backend URL: {backend_url}")
+            return broker_url, backend_url, handler
         else:
-            logger.error("Redis connection failed - cannot setup Celery")
-            return None, None
+            print("Redis connection failed")
+            return error_data
             
     except redis.ConnectionError as e:
-        logger.error(f"Redis connection error: {e}")
-        return None, None
+        print(f"Redis connection error: {e}")
+        print("Make sure Redis is running:")
+        return error_data
+        
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return None, None
+        print(f"Unexpected error: {e}")
+        return error_data
