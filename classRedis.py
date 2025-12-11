@@ -1,4 +1,8 @@
-import redis
+#import redis
+import fakeredis
+
+redis = fakeredis.FakeRedis()
+
 
 default_host = "localhost"
 default_port = 6379

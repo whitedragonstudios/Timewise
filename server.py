@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect, Blueprint, flash, session
-import classSettings, classScheduler
+import classSettings
 from classNews import News_Report
 from classQuotes import quote_generator
-from classWeather import weather_report
+from classWeather import Weather_Report
 from classHandler import Handler
 from classPerson import Person, Default_Person
 from classReports import Reports
@@ -23,7 +23,7 @@ def preload_data():
         print(f"Error loading config: {e}")
         raise RuntimeError("Critical Error: Database not initialized. ")
     try:
-        weather_data = weather_report(config.city, config.weather_key)
+        weather_data = Weather_Report(config.city, config.weather_key)
         print("Weather data loaded")
     except Exception as e:
         print(f"Weather unavailable: {e}")
@@ -156,7 +156,7 @@ def settings():
             if updated:
                 config = classSettings.Setting()
                 news = News_Report(config.country, config.news_key)
-                weather_data = weather_report(config.city, config.weather_key)
+                weather_data = Weather_Report(config.city, config.weather_key)
 
         # color updates dynamically
         if request.form.get("form_type") == "colors":

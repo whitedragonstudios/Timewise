@@ -5,6 +5,7 @@ Future Backlog
 Eighth Sprint planning
 1) Make a PyQT installer to handle inital setup and default settings
 2) Make docker config
+3) add a parameter to Handler to make print statements optional
 
 Seventh Sprint 12/2 - present
 1) Impliment connection to redis
