@@ -16,7 +16,7 @@ class News_Report():
 
 
     # get news sends API request and returns json dictionary of news articles.
-    def get_news(self):
+    def api_request(self):
         try: 
             NEWS_response = requests.get(
                 f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.news_key}"
@@ -31,11 +31,11 @@ class News_Report():
             if 'articles' not in NEWS_response:
                 print(f"ERROR: No articles in API response: {NEWS_response}")
                 return self.error_data()
-                
+            print(NEWS_response) 
             return NEWS_response
             
         except requests.exceptions.RequestException as e:
-            print("ERROR: (get_news) api request >>>", e)
+            print("ERROR:api request >>>", e)
             return self.error_data()
 
 
@@ -80,29 +80,19 @@ class News_Report():
             user_handle.send_command("DELETE FROM news_database")
             for item in articles:
                 try:
-                    user_handle.send_command(
-                        "INSERT INTO news_database (src, art, url) VALUES (%s, %s, %s)",
-                        (item["src"], item["art"], item["url"]))
-                    print(f"Article from {item['src']} added to database")
+                    src = item.get("src", "").replace("'", "''")
+                    art = item.get("art", "").replace("'", "''")
+                    url = item.get("url", "").replace("'", "''")
+                    cmd = (f"INSERT INTO news_database (src, art, url) VALUES ('{src}', '{art}', '{url}')")
+                    user_handle.send_command(cmd)
+                    print(f"Article from {src} added to database")
                 except Exception as e:
                     print(f"Error inserting article from {item.get('src', 'UNKNOWN')}: {e}")
         except Exception as e:
             print(f"Error preparing news_database table: {e}")
 
-        
-    # Flow control for the class calls both methods and passes data between them
-    def update_news(self):
-        try:
-            news_response = self.get_news()
-            articles = self.parse_news(news_response)
-            self.save_news(articles)
-            return articles
-        except Exception as e:
-            print("Error updating news:", e)
-            return []
 
-    
-    # Gets news from the database NOTE is not included in autorun process
+        # Gets news from the database NOTE is not included in autorun process
     def get_news(self):
         user_handle = Handler("user")
         try:
@@ -115,6 +105,21 @@ class News_Report():
             print("Error reading news from database:", e)
             return []
         
+
+    # Flow control for the class calls both methods and passes data between them
+    def update_news(self):
+        try:
+            news_response = self.api_request()
+            articles = self.parse_news(news_response)
+            self.save_news(articles)
+            #self.get_news()
+            return articles
+        except Exception as e:
+            print("Error updating news:", e)
+            return []
+
+    
+
 
     # Return error data structure when API fails
     def error_data(self):

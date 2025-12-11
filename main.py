@@ -30,7 +30,7 @@ if __name__ == "__main__":
         cf = classSettings.Setting()
         print("Settings loaded successfully.")
     try:
-        scheduler = Scheduler()
+        scheduler = Scheduler(cf)
         schedule = scheduler.run()
     except Exception as e:
         print(f"Error initalizing redis and celery: {e}")

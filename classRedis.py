@@ -1,7 +1,7 @@
-#import redis
-import fakeredis
+import redis
+#import fakeredis
 
-redis = fakeredis.FakeRedis()
+#redis = fakeredis.FakeRedis()
 
 
 default_host = "localhost"

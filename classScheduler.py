@@ -12,11 +12,16 @@ celery_app = None
 
 
 class Scheduler():
-    def __init__(self):
+    def __init__(self, config):
         broker_url, backend_url, redis_handler = redis_handle()
         self.broker = broker_url
         self.backend = backend_url
         self.redis = redis_handler
+        # Config settings
+        self.city = config.city
+        self.country = config.country
+        self.nkey = config.news_key
+        self.wkey = config.weather_key
 
         print("Scheduler initialized")
 
@@ -60,7 +65,7 @@ class Scheduler():
         def get_weather(self):
             try:
                 print("=== REFRESHING WEATHER ===")
-                weather = Weather_Report(autorun=True, gps_check=False)
+                weather = Weather_Report(self.city, self.wkey, autorun=True, gps_check=False)
                 weather.assign()
                 weather.update_database()
                 print("Weather refreshed successfully")
@@ -74,7 +79,8 @@ class Scheduler():
         def get_news(self):
             try:
                 print("=== REFRESHING NEWS ===")
-                news = News_Report()
+                news = News_Report(self.country, self.nkey)
+                news.api_request()
                 news.get_news()
                 print("News refreshed successfully")
                 return {'timestamp': dt.now().isoformat(), 'status': 'success'}
