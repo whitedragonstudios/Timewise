@@ -1,7 +1,4 @@
 import redis
-from typing import Optional, Tuple
-import logging
-
 
 default_host = "localhost"
 default_port = 6379

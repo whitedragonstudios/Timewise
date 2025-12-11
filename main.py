@@ -1,4 +1,5 @@
 import classInstall, classSettings
+from classScheduler import Scheduler
 reset = False
 
 if __name__ == "__main__":
@@ -29,14 +30,17 @@ if __name__ == "__main__":
         cf = classSettings.Setting()
         print("Settings loaded successfully.")
     try:
-        if cf.config_status == "True":
+        scheduler = Scheduler()
+        schedule = scheduler.run()
+    except Exception as e:
+        print(f"Error initalizing redis and celery: {e}")
+    try:
+        if cf.config_status == "True" and schedule is not None:
             from server import app, frontend
             # Launcher server
             app.register_blueprint(frontend)
             app.run(host="0.0.0.0", port=2000, debug=True)
             #serve(app, host="0.0.0.0", port=2000))
-            pass
-            
         else:
             print("Configuration status is False. Please complete the installation process.")
     except Exception as e:

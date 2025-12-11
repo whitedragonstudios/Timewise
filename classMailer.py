@@ -25,6 +25,7 @@ class Mailer():
         self.spass = config.sender_password
         self.last_email = config.last_email
 
+
     def run(self):
         threads = []
         t1 = threading.Thread(target=self.save_report)
@@ -34,6 +35,7 @@ class Mailer():
             t.start()
         for t in threads:
             t.join()
+
 
     def generate_report(self, later):
         start_date = date.today().strftime("%Y-%m-%d")
