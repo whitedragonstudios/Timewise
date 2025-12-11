@@ -4,7 +4,7 @@ from celery import Celery
 from celery.schedules import crontab
 from datetime import datetime as dt
 from classMailer import Mailer
-from classNews import News_Report
+from classNews import Update_News
 from classWeather import Weather_Report
 
 # Global celery app (created later)
@@ -79,9 +79,8 @@ class Scheduler():
         def get_news(self):
             try:
                 print("=== REFRESHING NEWS ===")
-                news = News_Report(self.country, self.nkey)
-                news.api_request()
-                news.get_news()
+                news = Update_News(self.country, self.nkey)
+                news.run()
                 print("News refreshed successfully")
                 return {'timestamp': dt.now().isoformat(), 'status': 'success'}
             except Exception as e:

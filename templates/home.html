@@ -150,10 +150,6 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/home_script.js') }}"></script>
-    <script>
-    const newsArticles = {{ news_articles|tojson }};
-    initNewsCycle(newsArticles);
-    </script>
 
 </body>
 </html>

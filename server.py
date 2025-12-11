@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, Blueprint, flash, session
+from flask import Flask, render_template, request, redirect, Blueprint, flash, session, jsonify
 import classSettings
-from classNews import News_Report
+from classNews import News_Report, Update_News
 from classQuotes import quote_generator
 from classWeather import Weather_Report
 from classHandler import Handler
@@ -29,8 +29,8 @@ def preload_data():
         print(f"Weather unavailable: {e}")
     
     try:
-        news = News_Report(config.country, config.news_key)
-        print("News loaded")
+        news = Update_News(config.country, config.news_key)
+        print("News Database Updated")
     except Exception as e:
         print(f"News unavailable: {e}")
     
@@ -64,6 +64,8 @@ recent_list = []
 
 config, weather_data, news, quoteOTDay = preload_data()
 user_handle = Handler("user")
+
+news_cache = News_Report()
 
 # Set default and index route
 @frontend.route ('/')
@@ -114,6 +116,7 @@ def home():
     if employee is None:
         employee = Default_Person(recent_list, idscan)
 
+    articles = news_cache.get_news()
     return render_template("home.html", 
                            recent_people=recent_list,
                            scan=employee,
@@ -121,10 +124,17 @@ def home():
                            quote=quoteOTDay[0],
                            author=quoteOTDay[1],
                            wd=weather_data,
-                           news_articles=news.articles
+                           news_articles=articles
                            )
 
+@frontend.route("/refresher/news")
+def refresh_news():
+    return jsonify(news_cache.get_news())
 
+@frontend.route("/refresher/weather")
+def refresh_weather():
+    pass
+    #return jsonify(weather_cache.get_weather())
 
 
 @frontend.route('/settings', methods=['GET', 'POST'])

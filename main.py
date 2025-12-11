@@ -1,5 +1,16 @@
 import classInstall, classSettings
 from classScheduler import Scheduler
+from classHandler import Handler
+
+def edit_db():
+    user = Handler("user")
+    user.send_command("""
+                CREATE TABLE IF NOT EXISTS updates_database (
+                    key TEXT PRIMARY KEY, 
+                    value TIMESTAMPTZ DEFAULT NOW());""")
+    user.send_command("INSERT INTO updates_database (key) VALUES ('news'), ('weather'), ('config'), ('emails');")
+
+#edit_db()
 reset = False
 
 if __name__ == "__main__":
