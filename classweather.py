@@ -1,80 +1,36 @@
-import requests, json
+import requests
 from classHandler import Handler
 
 
 # weather report uses an api to send weather to the flask interface
-class Weather_Report():
-    def __init__(self, city_name, weather_key, autorun = True, gps_check = True):
-        # city name and weather key come from config database.
-        self.city_name = city_name
-        self.weather_key = weather_key
-        if gps_check == True:
-            # API needs gps coordinates so city has to be passed to get_gps
-            gps = self.get_gps(self.city_name)
-            self.longitude = gps[0] or -74.0060152
-            self.latitude = gps[1] or 40.7127281
-            self.city = gps[2] or "New York"
-            self.state = gps[3] or "NY"
-            self.country = gps[4] or "US"
-        if autorun == True:
+class Update_Weather():
+    def __init__(self, autorun = True):
+        self.user_handle = Handler("user")
+        db = self.user_handle.send_query("SELECT value FROM config_database WHERE key IN ('weather_key', 'lon', 'lat');")
+        self.weather_key = db[0][0]
+        self.longitude = db[1][0]
+        self.latitude = db[2][0]  
+        if autorun:
+            response = self.api_request()
             # Once gps is retrieved a second call to get_weather is performed
-            self.assign()
+            stored = self.parse_weather(response)
             # update database with new weather data
-            self.update_database
-            # config database is updated with changes to match new city
-            self.update_config()
-
-
-    # Get gps passes city to return long and lat
-    def get_gps(self,city):
-        try:
-            # requests api response
-            GPS_response = requests.get(f"http://api.openweathermap.org/geo/1.0/direct?q={city}&appid={self.weather_key}").json()
-            #print(GPS_response)
-            if not GPS_response:
-                print(f"WARNING: No results found for city '{city}'. Using default (New York City).")
-                # Returns usable list with default data sets
-                return [-74.0060152, 40.7127281, "New York", "NY", "US"]
-            try:
-                # Extract list and dictionary to get usable data.
-                country = GPS_response[0].get('country', 'US')
-                state = GPS_response[0].get('state', '')
-                name = GPS_response[0].get('name', city)
-                lon = GPS_response[0].get('lon', -74.0060152)
-                lat = GPS_response[0].get('lat', 40.7127281)
-            except (IndexError, KeyError) as e:
-                print(f"ERROR: weather.get_gps >>> data parsing >>> {e}")
-                return [-74.0060152, 40.7127281, "New York", "NY", "US"]
-            # return a list
-            return [lon, lat, name, state, country]
-        
-        except requests.exceptions.RequestException as e:
-            print("ERROR: weather.get_gps >>> api request >>>", e)
-            # Returns usable list with default data sets
-            return [-74.0060152, 40.7127281, "New York", "NY", "US"]
+            self.save_weather(stored)
     
-
+    
     #Get weather makes second call to the api for detailed weather 
-    def get_weather(self):
+    def api_request(self):
         # api call uses gps coordinates from get gps
         try: 
             WEATHER_response = requests.get(f"https://api.openweathermap.org/data/2.5/weather?lat={self.latitude}&lon={self.longitude}&appid={self.weather_key}").json()
         except requests.exceptions.RequestException as e:
             print("ERROR: weather.get_weather >>> api request >>>", e)
             WEATHER_response = self.error_data()
-        print(WEATHER_response)
+        #print(WEATHER_response)
         # Returns full dict
         return WEATHER_response
     
 
-    # update config sends gps city and country data to the config database
-    def update_config(self):
-        conn = Handler(profile="user")
-        conn.update_database("config_database", "key", "value", "city", self.city)
-        conn.update_database("config_database", "key", "value", "lon", self.longitude)
-        conn.update_database("config_database", "key", "value", "lat", self.latitude)
-        conn.update_database("config_database", "key", "value", "country", self.country)
-    
     # Weather direction translates degrees returned from api to cardinal directions.
     def wind_direction(self, wind_dir):
         try:
@@ -95,15 +51,91 @@ class Weather_Report():
         return cardinal
     
 
-    def assign(self):
+    def parse_weather(self, weather_response):
         try:
-            data = self.get_weather()
+            data = weather_response
             # Check if we got a valid response with weather data
             if 'weather' not in data or 'main' not in data:
                 print(f"ERROR: Invalid weather API response: {data}")
                 data = self.error_data()
         except Exception as e:
-            print("ERROR: weather.__init__ >>> get_weather >>>", e)
+            print("ERROR: >>> get_weather >>>", e)
+            data = self.error_data()
+        # response is formatted for direct output.
+        try:
+            description = data['weather'][0]['description'].title()
+            icon = data['weather'][0]['icon']
+            if not icon.endswith('.png'):
+                icon += ".png"
+            feel = int((data['main']['feels_like']) * 1.8 - 459.67)
+            min_temp = int((data['main']['temp_min']) * 1.8 - 459.67)
+            max_temp = int((data['main']['temp_max']) * 1.8 - 459.67)
+            temp = f"{min_temp} - {max_temp}"
+            humid = data['main']['humidity']
+            clouds = data['clouds']['all']
+            dir = self.wind_direction(data['wind']['deg'])
+            wind = f"{dir} {int(data['wind']['speed'])}mp/h"
+        except (KeyError, TypeError, ValueError) as e:
+            print(f"ERROR:  >>> parsing weather data >>> {e}")
+            # Set default error values
+            description = "API Error"
+            icon = "01d.png"
+            feel = "N/A"
+            temp = "N/A"
+            humid = "N/A"
+            clouds = "N/A"
+            wind = "N/A"
+        stored_weather = {"description": description, "icon":icon, "feel":feel, "temp":temp,"humid":humid, "clouds":clouds,"wind":wind}
+        return stored_weather
+
+    def save_weather(self, data):
+        print(data)
+        if data["description"] != "API Error":
+            self.user_handle = Handler("user")
+            self.user_handle.send_command("DELETE FROM weather_database")
+            for k,v in data.items():
+                try:
+                    self.user_handle.send_command(f"INSERT INTO weather_database (key, value) VALUES ('{k}', '{v}')")
+                except Exception as e:
+                    print(f"Error adding weather to database - {k} = {v} :\n {e}")
+            self.user_handle.send_command("UPDATE updates_database SET value = NOW() WHERE key = 'weather'; ")
+        else:
+            print("Error: Using old database values for weather")
+        
+
+
+    def error_data(self):
+        return {"weather": [{"description": "API Error", "icon": "01d"}], 
+            "main": {"feels_like": 255, "temp_min": 255, "temp_max": 255, "humidity": 0},
+            "clouds": {"all": 0}, "wind": {"deg": 0, "speed": 0}} 
+
+
+class Weather_Report():
+    def __init__(self):
+        self.last_loaded = None
+
+
+    # Checks if the most recent entry in the updated_database is new
+    def get_weather(self):
+        user_handle = Handler("user")
+        try:
+            last = user_handle.send_query("SELECT value FROM updates_database WHERE key = 'weather'")
+            print(last)
+            if last[0][0] != self.last_loaded:
+                self.articles = self.reload(user_handle)
+                self.last_loaded = last[0][0]
+            return self.articles
+        except Exception as e:
+            print("Error reading news from database:", e)
+            return []
+
+
+    # Gets news articles from database
+    def reload(self, handler):
+        try:
+            data = handler.send_query("SELECT * FROM weather_database")
+        except Exception as e:
+            print("ERROR: >>> Loading weather from database >>>", e)
             data = self.error_data()
         
         # response is formatted for direct output.
@@ -121,7 +153,7 @@ class Weather_Report():
             dir = self.wind_direction(data['wind']['deg'])
             self.wind = f"{dir} {int(data['wind']['speed'])}mp/h"
         except (KeyError, TypeError, ValueError) as e:
-            print(f"ERROR: weather.__init__ >>> parsing weather data >>> {e}")
+            print(f"ERROR:  >>> parsing weather data >>> {e}")
             # Set default error values
             self.description = "API Error"
             self.icon = "01d.png"
@@ -130,37 +162,9 @@ class Weather_Report():
             self.humid = "N/A"
             self.clouds = "N/A"
             self.wind = "N/A"
-
-    def update_database(self):
         stored_weather = {"description": self.description, "icon":self.icon, "feel":self.feel, "temp":self.temp,"humid":self.humid, "clouds":self.clouds,"wind":self.wind}
-        if stored_weather["description"] != "API Error":
-            user_handle = Handler("user")
-            user_handle.send_command("DELETE FROM weather_database")
-            for k,v in stored_weather.items():
-                user_handle.send_command("INSERT INTO weather_database (key, value) VALUES %s, %s", (k,v))
-        else:
-            print("Error: Using old database values for weather")
+        return stored_weather
 
+gps = Change_City("new york")
 
-    def error_data(self):
-        return {
-            "weather": [
-                {
-                    "description": "API Error",
-                    "icon": "01d"
-                }
-            ], 
-            "main": {   
-                "feels_like": 255.372,
-                "temp_min": 255.372,
-                "temp_max": 255.372,
-                "humidity": 0
-            },
-            "clouds": {
-                "all": 0
-            },
-            "wind": {
-                "deg": 0,
-                "speed": 0
-            }
-        } 
+#up = Update_Weather()

@@ -3,29 +3,39 @@ from classHandler import Handler
 
 # This class gets news from an API and processes it for display in flask and js
 class Update_News():
-    def __init__(self, country, news_key, banned_list = [], autorun = True):
-        # News Report needs the api key and country stored in config database 
-        self.country = country
-        self.news_key = news_key
+    def __init__(self, autorun = True):
+        self.user_handle = Handler("user")
+        #self.user_handle.send_command("INSERT INTO config_database (key) VALUES ('banned');")
+        db = self.user_handle.send_query("SELECT value FROM config_database WHERE key IN ('country', 'news_key', 'banned');")
+        print(db)
+        self.news_key = db[0][0]
+        self.country = db[1][0]
+        self.banned_list = db[2][0].split(",")
         # A banned list can be passed to not display certain news sources defaults to an empty list
-        self.banned_list = banned_list or []
         if autorun:
-            self.articles = self.run()
+            self.user_handle
+            response = self.api_request()
+            articles = self.parse_news(response)
+            self.save_news(articles)
 
 
     # Sends API request and returns json dictionary of news articles.
     def api_request(self):
-        try: 
+        try:
             NEWS_response = requests.get(f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.news_key}").json()
-            # Check if the API returned an error
-            if 'status' in NEWS_response and NEWS_response['status'] == 'error':
-                print(f"ERROR: News API returned error: {NEWS_response.get('message', 'Unknown error')}")
+            print(NEWS_response)
+            # Check if any articles where actually returned
+            if len(NEWS_response["articles"]) == 0:
+                print("NOTE!!! free version of newsapi only works for the US")
                 return self.error_data()
             # Check if articles exist in response
             if 'articles' not in NEWS_response:
                 print(f"ERROR: No articles in API response: {NEWS_response}")
                 return self.error_data()
-            #print(NEWS_response) 
+            # Check if the API returned an error
+            if 'status' in NEWS_response and NEWS_response['status'] == 'error':
+                print(f"ERROR: News API returned error: {NEWS_response.get('message', 'Unknown error')}")
+                return self.error_data()
             return NEWS_response
         except requests.exceptions.RequestException as e:
             print("ERROR:api request >>>", e)
@@ -84,14 +94,6 @@ class Update_News():
             print(f"Error preparing news_database table: {e}")
 
 
-    # Flow control for the class calls both methods and passes data between them
-    def run(self):
-        news_response = self.api_request()
-        articles = self.parse_news(news_response)
-        self.save_news(articles)
-        return articles
-
-
     # Return error data structure when API fails
     def error_data(self):
         return {'status': 'error','articles': [
@@ -106,7 +108,13 @@ class Update_News():
                 {'source': {'name': 'Error'},
                     'title': 'Check your internet connection',
                     'description': 'Unable to reach news service',
+                    'url': '#'},
+                {'source': {'name': 'Error'},
+                    'title': 'Free version of newsAPI only works for US cities',
+                    'description': 'Unable to get articles',
                     'url': '#'}]}
+
+
 
 
 class News_Report():
@@ -142,3 +150,5 @@ class News_Report():
             print("Error reading news from database:", e)
             articles = []
         return articles
+
+upn = Update_News()
