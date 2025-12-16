@@ -95,7 +95,7 @@ class Update_Weather():
             self.user_handle.send_command("DELETE FROM weather_database")
             for k,v in data.items():
                 try:
-                    self.user_handle.send_command(f"INSERT INTO weather_database (key, value) VALUES ('{k}', '{v}')")
+                    self.user_handle.update_database("weather_database", "key","value",k, v)
                 except Exception as e:
                     print(f"Error adding weather to database - {k} = {v} :\n {e}")
             self.user_handle.send_command("UPDATE updates_database SET value = NOW() WHERE key = 'weather'; ")
@@ -111,60 +111,61 @@ class Update_Weather():
 
 
 class Weather_Report():
-    def __init__(self):
+    def __init__(self, autorun = True):
         self.last_loaded = None
-
+        self.description = "Loading..."
+        self.icon = "01d.png"
+        self.feel = "N/A"
+        self.temp = "N/A"
+        self.humid = "N/A"
+        self.clouds = "N/A"
+        self.wind = "N/A"
+        
+        if autorun:
+            self.get_weather()
+        if autorun:
+            self.get_weather()
 
     # Checks if the most recent entry in the updated_database is new
     def get_weather(self):
         user_handle = Handler("user")
         try:
             last = user_handle.send_query("SELECT value FROM updates_database WHERE key = 'weather'")
-            print(last)
             if last[0][0] != self.last_loaded:
-                self.articles = self.reload(user_handle)
                 self.last_loaded = last[0][0]
-            return self.articles
+                try:
+                    data = user_handle.send_query("SELECT * FROM weather_database")
+                    data = dict(data)
+                    report = self.assign(data)
+                    return report
+                except Exception as e:
+                    print("ERROR: >>> Loading weather from database >>>", e)
+                    return self.error_data()
+            else:
+                # Return cached data when timestamp hasn't changed
+                return {"description": self.description, "icon": self.icon, 
+                        "feel": self.feel, "temp": self.temp, "humid": self.humid, 
+                        "clouds": self.clouds, "wind": self.wind}
         except Exception as e:
-            print("Error reading news from database:", e)
-            return []
-
-
-    # Gets news articles from database
-    def reload(self, handler):
-        try:
-            data = handler.send_query("SELECT * FROM weather_database")
-        except Exception as e:
-            print("ERROR: >>> Loading weather from database >>>", e)
-            data = self.error_data()
+            print("Error reading weather from database:", e)
+            return self.error_data()
         
+
+    def assign(self, data):
         # response is formatted for direct output.
         try:
-            self.description = data['weather'][0]['description'].title()
-            self.icon = data['weather'][0]['icon']
-            if not self.icon.endswith('.png'):
-                self.icon += ".png"
-            self.feel = int((data['main']['feels_like']) * 1.8 - 459.67)
-            min_temp = int((data['main']['temp_min']) * 1.8 - 459.67)
-            max_temp = int((data['main']['temp_max']) * 1.8 - 459.67)
-            self.temp = f"{min_temp} - {max_temp}"
-            self.humid = data['main']['humidity']
-            self.clouds = data['clouds']['all']
-            dir = self.wind_direction(data['wind']['deg'])
-            self.wind = f"{dir} {int(data['wind']['speed'])}mp/h"
+            self.description = data['description'].title()
+            self.icon = data['icon']
+            self.feel = data['feel']
+            self.temp = data["temp"]
+            self.humid = data['humid']
+            self.clouds = data['clouds']
+            self.wind = data['wind']
         except (KeyError, TypeError, ValueError) as e:
             print(f"ERROR:  >>> parsing weather data >>> {e}")
-            # Set default error values
-            self.description = "API Error"
-            self.icon = "01d.png"
-            self.feel = "N/A"
-            self.temp = "N/A"
-            self.humid = "N/A"
-            self.clouds = "N/A"
-            self.wind = "N/A"
-        stored_weather = {"description": self.description, "icon":self.icon, "feel":self.feel, "temp":self.temp,"humid":self.humid, "clouds":self.clouds,"wind":self.wind}
-        return stored_weather
+            return self.error_data()
+        return data
 
-gps = Change_City("new york")
 
-#up = Update_Weather()
+    def error_data(self):
+        return {"description": "API Error", "icon": "01d.png", "feel": "N/A", "temp": "N/A","humid": "N/A", "clouds": "N/A","wind": "N/A"}  

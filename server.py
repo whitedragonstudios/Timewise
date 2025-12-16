@@ -2,12 +2,13 @@ from flask import Flask, render_template, request, redirect, Blueprint, flash, s
 import classSettings
 from classNews import News_Report, Update_News
 from classQuotes import quote_generator
-from classWeather import Weather_Report
+from classWeather import Weather_Report, Update_Weather
 from classHandler import Handler
 from classPerson import Person, Default_Person
 from classReports import Reports
 from classSearch import Search
 from classMailer import Mailer
+from classLocation import Change_City
 import services
 
 
@@ -23,13 +24,13 @@ def preload_data():
         print(f"Error loading config: {e}")
         raise RuntimeError("Critical Error: Database not initialized. ")
     try:
-        weather_data = Weather_Report(config.city, config.weather_key)
+        weather_data = Update_Weather()
         print("Weather data loaded")
     except Exception as e:
         print(f"Weather unavailable: {e}")
     
     try:
-        news = Update_News(config.country, config.news_key)
+        news = Update_News()
         print("News Database Updated")
     except Exception as e:
         print(f"News unavailable: {e}")
@@ -66,6 +67,7 @@ config, weather_data, news, quoteOTDay = preload_data()
 user_handle = Handler("user")
 
 news_cache = News_Report()
+weather_cache = Weather_Report()
 
 # Set default and index route
 @frontend.route ('/')
@@ -117,6 +119,7 @@ def home():
         employee = Default_Person(recent_list, idscan)
 
     articles = news_cache.get_news()
+    weather_data = weather_cache.get_weather()
     return render_template("home.html", 
                            recent_people=recent_list,
                            scan=employee,
@@ -133,8 +136,7 @@ def refresh_news():
 
 @frontend.route("/refresher/weather")
 def refresh_weather():
-    pass
-    #return jsonify(weather_cache.get_weather())
+    return jsonify(weather_cache.get_weather())
 
 
 @frontend.route('/settings', methods=['GET', 'POST'])

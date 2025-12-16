@@ -7,7 +7,7 @@ class Update_News():
         self.user_handle = Handler("user")
         #self.user_handle.send_command("INSERT INTO config_database (key) VALUES ('banned');")
         db = self.user_handle.send_query("SELECT value FROM config_database WHERE key IN ('country', 'news_key', 'banned');")
-        print(db)
+        #print(db)
         self.news_key = db[0][0]
         self.country = db[1][0]
         self.banned_list = db[2][0].split(",")
@@ -23,7 +23,7 @@ class Update_News():
     def api_request(self):
         try:
             NEWS_response = requests.get(f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.news_key}").json()
-            print(NEWS_response)
+            #print(NEWS_response)
             # Check if any articles where actually returned
             if len(NEWS_response["articles"]) == 0:
                 print("NOTE!!! free version of newsapi only works for the US")
@@ -85,7 +85,7 @@ class Update_News():
                     url = item.get("url", "").replace("'", "''")
                     # Send to db
                     user_handle.send_command(f"INSERT INTO news_database (src, art, url) VALUES ('{src}', '{art}', '{url}')")
-                    print(f"Article from {src} added to database")
+                    #print(f"Article from {src} added to database")
                     user_handle.send_command("UPDATE updates_database SET value = NOW() WHERE key = 'news'; ")
                 except Exception as e:
                     print(f"Error inserting article from {item.get('src', 'UNKNOWN')}: {e}")
@@ -128,7 +128,7 @@ class News_Report():
         user_handle = Handler("user")
         try:
             last = user_handle.send_query("SELECT value FROM updates_database WHERE key = 'news'")
-            print(last)
+            #print(last)
             if last[0][0] != self.last_loaded:
                 self.articles = self.reload(user_handle)
                 self.last_loaded = last[0][0]
