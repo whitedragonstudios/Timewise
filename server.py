@@ -143,7 +143,6 @@ def refresh_weather():
 def settings():
     if request.method == "POST":
         global config, weather_data, news
-        
         # Danger Zone
         action = request.form.get("action")
         if action:
@@ -166,9 +165,11 @@ def settings():
                 except Exception as e:
                     print(f"Failed to update {key}: {e}")
             if updated:
+                global news_cache, weather_cache
                 config = classSettings.Setting()
-                news = News_Report(config.country, config.news_key)
-                weather_data = Weather_Report(config.city, config.weather_key)
+                Change_City(config.city)
+                news_cache = News_Report()
+                weather_cache = Weather_Report()
 
         # color updates dynamically
         if request.form.get("form_type") == "colors":

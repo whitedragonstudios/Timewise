@@ -6,10 +6,14 @@ from classHandler import Handler
 class Update_Weather():
     def __init__(self, autorun = True):
         self.user_handle = Handler("user")
-        db = self.user_handle.send_query("SELECT value FROM config_database WHERE key IN ('weather_key', 'lon', 'lat');")
+        db = self.user_handle.send_query("SELECT value FROM config_database WHERE key IN ('weather_key', 'lon', 'lat', 'city', 'state', 'country');")
+        print(db)
         self.weather_key = db[0][0]
         self.longitude = db[1][0]
-        self.latitude = db[2][0]  
+        self.latitude = db[2][0]
+        self.city = db[3][0]
+        self.state = db[4][0]
+        self.country = db[5][0]
         if autorun:
             response = self.api_request()
             # Once gps is retrieved a second call to get_weather is performed
@@ -85,11 +89,11 @@ class Update_Weather():
             humid = "N/A"
             clouds = "N/A"
             wind = "N/A"
-        stored_weather = {"description": description, "icon":icon, "feel":feel, "temp":temp,"humid":humid, "clouds":clouds,"wind":wind}
+        stored_weather = {"city":self.city, "state": self.state, "country":self.country,"description": description, "icon":icon, "feel":feel, "temp":temp,"humid":humid, "clouds":clouds,"wind":wind}
         return stored_weather
 
     def save_weather(self, data):
-        print(data)
+        #print(data)
         if data["description"] != "API Error":
             self.user_handle = Handler("user")
             self.user_handle.send_command("DELETE FROM weather_database")
@@ -101,7 +105,6 @@ class Update_Weather():
             self.user_handle.send_command("UPDATE updates_database SET value = NOW() WHERE key = 'weather'; ")
         else:
             print("Error: Using old database values for weather")
-        
 
 
     def error_data(self):
@@ -113,6 +116,9 @@ class Update_Weather():
 class Weather_Report():
     def __init__(self, autorun = True):
         self.last_loaded = None
+        self.city = "Geolocating..."
+        self.state = ""
+        self.country = ""
         self.description = "Loading..."
         self.icon = "01d.png"
         self.feel = "N/A"
@@ -143,7 +149,7 @@ class Weather_Report():
                     return self.error_data()
             else:
                 # Return cached data when timestamp hasn't changed
-                return {"description": self.description, "icon": self.icon, 
+                return {"city": self.city, "state":self.state, "country": self.country, "description": self.description, "icon": self.icon, 
                         "feel": self.feel, "temp": self.temp, "humid": self.humid, 
                         "clouds": self.clouds, "wind": self.wind}
         except Exception as e:
@@ -154,6 +160,9 @@ class Weather_Report():
     def assign(self, data):
         # response is formatted for direct output.
         try:
+            self.city = data['city'].title()
+            self.state = data['state'].title()
+            self.country = data['country'].upper()
             self.description = data['description'].title()
             self.icon = data['icon']
             self.feel = data['feel']
@@ -168,4 +177,4 @@ class Weather_Report():
 
 
     def error_data(self):
-        return {"description": "API Error", "icon": "01d.png", "feel": "N/A", "temp": "N/A","humid": "N/A", "clouds": "N/A","wind": "N/A"}  
+        return {"city":"Unknown", "state": "", "country":"","description": "API Error", "icon": "01d.png", "feel": "N/A", "temp": "N/A","humid": "N/A", "clouds": "N/A","wind": "N/A"}  

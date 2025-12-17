@@ -61,11 +61,13 @@ class Handler:
         try:
             conn = self.connect()
             cur = conn.cursor()
-            print("<<< Executing command >>>")
-            print(cmd)
+            if self.info:
+                print("<<< Executing command >>>")
+                print(cmd)
             cur.execute(cmd)
             conn.commit()
-            print(">>> Executed command <<<")
+            if self.info:
+                print(">>> Executed command <<<")
             for notice in conn.notices:
                 print("NOTICE:", notice)
         except psycopg2.Error as e:
@@ -83,14 +85,16 @@ class Handler:
         try:
             conn = self.connect()
             cur = conn.cursor()
-            print("<<< Executing Query >>>")
-            print(query)
+            if self.info:
+                print("<<< Executing Query >>>")
+                print(query)
             cur.execute(query)
             results = cur.fetchall()
-            print("--- Query Results ---")
-            for row in results:
-                print(row)
-            print("--- End Results ---")
+            if self.info:
+                print("--- Query Results ---")
+                for row in results:
+                    print(row)
+                print("--- End Results ---")
             for notice in conn.notices:
                 print("NOTICE:", notice)
             return results
@@ -126,6 +130,7 @@ class Handler:
                 (key, value)
             )
             conn.commit()
+            #if self.info:
             print(f"Configuration key '{key}' updated to {value}")
         except psycopg2.Error as e:
             if conn and not conn.closed:
@@ -165,7 +170,8 @@ class Handler:
                 
                 values = list(update_fields.values()) + [employee_id]
                 messages["info"].append(f"Updated employee {employee_id}")
-                print(f"Updating existing employee {employee_id} with values: {values}")
+                if self.info:
+                    print(f"Updating existing employee {employee_id} with values: {values}")
                 cur.execute(query, values)
             else:
                 # Employee doesn't exist - do INSERT with all fields
@@ -178,7 +184,8 @@ class Handler:
                     placeholders=placeholders
                 )
                 messages["info"].append(f"Inserted new employee {employee_id}")
-                print(f"Inserting new employee {employee_id} with values: {values}")
+                if self.info:
+                    print(f"Inserting new employee {employee_id} with values: {values}")
                 cur.execute(query, values)
             
             conn.commit()

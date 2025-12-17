@@ -9,7 +9,7 @@ class Change_City():
         self.user_handle = Handler("user")
         if autorun:
             wk = self.user_handle.send_query("SELECT value FROM config_database WHERE key = 'weather_key';")
-            print("here",wk)
+            print(wk)
             self.weather_key = wk[0][0]
             gps = self.get_gps(self.city_name)
             print(gps)
