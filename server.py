@@ -66,8 +66,8 @@ recent_list = []
 config, weather_data, news, quoteOTDay = preload_data()
 user_handle = Handler("user")
 
-news_cache = News_Report()
 weather_cache = Weather_Report()
+news_cache = News_Report()
 
 # Set default and index route
 @frontend.route ('/')
@@ -130,9 +130,11 @@ def home():
                            news_articles=articles
                            )
 
+
 @frontend.route("/refresher/news")
 def refresh_news():
     return jsonify(news_cache.get_news())
+
 
 @frontend.route("/refresher/weather")
 def refresh_weather():
@@ -226,8 +228,6 @@ def settings():
     return render_template("settings.html", cf=config)
 
 
-
-
 @frontend.route('/search', methods=['GET', 'POST'])
 def search():
     search = session.get('last_search')
@@ -260,6 +260,7 @@ def search():
         search_result = search_result,
         )
     
+
 @frontend.route('/reports', methods=['GET', 'POST'])
 def reports():
     current = Reports()
