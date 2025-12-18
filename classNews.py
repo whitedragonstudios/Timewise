@@ -222,7 +222,3 @@ class News_Report():
         except Exception as e:
             print(f"ERROR: Failed to reload news from database: {e}")
             return []
-
-
-# REMOVED: upn = Update_News()
-# Do not instantiate at module level - this causes initialization issues
