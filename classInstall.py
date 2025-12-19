@@ -369,14 +369,12 @@ class Postgre_Install:
                 CREATE TABLE IF NOT EXISTS config_database (
                     key VARCHAR(50) PRIMARY KEY, 
                     value VARCHAR(128)
-                );
-            """,
+                );""",
             "email_list": """
                 CREATE TABLE IF NOT EXISTS email_list (
                     key VARCHAR(255) PRIMARY KEY, 
                     value VARCHAR(8)
-                );
-            """,
+                );""",
             "people_database": """
                 CREATE TABLE IF NOT EXISTS people_database (
                     employee_id INTEGER PRIMARY KEY,
@@ -388,8 +386,7 @@ class Postgre_Install:
                     employee_role VARCHAR(50),
                     position VARCHAR(50),
                     department VARCHAR(50)
-                );
-            """,
+                );""",
             "timesheet_database": """
                 CREATE TABLE IF NOT EXISTS timesheet_database (
                     id SERIAL PRIMARY KEY,
@@ -398,23 +395,25 @@ class Postgre_Install:
                     clock_out TIMESTAMPTZ,
                     work_date DATE DEFAULT CURRENT_DATE,
                     notes TEXT
-                );
-            """,
+                );""",
             "news_database": """
                 CREATE TABLE IF NOT EXISTS news_database (
                     id SERIAL PRIMARY KEY,
                     src TEXT,
                     art TEXT,
-                    url TEXT
-                );
-            """,
+                    url TEXT,
+                    updated TIMESTAMPTZ DEFAULT NOW()
+                );""",
             "weather_database": """
                 CREATE TABLE IF NOT EXISTS weather_database (
                     key VARCHAR(255) PRIMARY KEY,
                     value VARCHAR(255)
-                );
-            """
-        }
+                );""",
+            "updates_database" : """
+                CREATE TABLE IF NOT EXISTS updates_database (
+                    key TEXT PRIMARY KEY, 
+                    value TIMESTAMPTZ DEFAULT NOW());"""
+            }
 
         for name, command in tables.items():
             try:
@@ -505,6 +504,14 @@ class Postgre_Install:
                 print(f"  Warning: Could not add email {email}: {e}")
         
         print("  Email list configured")
+
+        updates = ["news", "weather", "config", "emails"]
+        for column in updates:
+            try:
+                self.user_handle.update_database("updates_database", "key", "value", column, "NOW()", keep_open=True)
+                print(f"{column} added to updates_database")
+            except Exception as e:
+                print(f"Warining Could not add {column} to updates_database: {e}")
 
 
     def _verify_database(self):

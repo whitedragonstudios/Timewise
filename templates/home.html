@@ -32,7 +32,7 @@
         <div class="sidebar"> 
             <div class="box">
                 <h2>Weather</h2>
-                <h3>{{wd.city}}, {% if wd.state or wd.country %}<br>{{ wd.state|default('') }}{% if wd.state and wd.country %} - {% endif %}{{ wd.country|default('') }}{% endif %}</h3>
+                <h3>{{wd.city}}, {% if wd.state or wd.country %}{{ wd.state|default('') }}{% if wd.state and wd.country %} - {% endif %}{{ wd.country|default('') }}{% endif %}</h3>
                  <img src="{{ url_for('static', filename='weather_icon/' + (wd.icon or 'default.png')) }}" alt="Weather Icon" width="100" height="100">
                     <h3>{{wd.description}}</h3>
                     <div class="weather-table">
@@ -150,10 +150,6 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/home_script.js') }}"></script>
-    <script>
-    const newsArticles = {{ news_articles|tojson }};
-    initNewsCycle(newsArticles);
-    </script>
 
 </body>
 </html>

@@ -1,13 +1,14 @@
-from flask import Flask, render_template, request, redirect, Blueprint, flash, session
+from flask import Flask, render_template, request, redirect, Blueprint, flash, session, jsonify
 import classSettings
-from classNews import News_Report
+from classNews import News_Report, Update_News
 from classQuotes import quote_generator
-from classWeather import Weather_Report
+from classWeather import Weather_Report, Update_Weather
 from classHandler import Handler
 from classPerson import Person, Default_Person
 from classReports import Reports
 from classSearch import Search
 from classMailer import Mailer
+from classLocation import Change_City
 import services
 
 
@@ -23,14 +24,14 @@ def preload_data():
         print(f"Error loading config: {e}")
         raise RuntimeError("Critical Error: Database not initialized. ")
     try:
-        weather_data = Weather_Report(config.city, config.weather_key)
+        weather_data = Update_Weather()
         print("Weather data loaded")
     except Exception as e:
         print(f"Weather unavailable: {e}")
     
     try:
-        news = News_Report(config.country, config.news_key)
-        print("News loaded")
+        news = Update_News()
+        print("News Database Updated")
     except Exception as e:
         print(f"News unavailable: {e}")
     
@@ -64,6 +65,9 @@ recent_list = []
 
 config, weather_data, news, quoteOTDay = preload_data()
 user_handle = Handler("user")
+
+weather_cache = Weather_Report()
+news_cache = News_Report()
 
 # Set default and index route
 @frontend.route ('/')
@@ -114,6 +118,8 @@ def home():
     if employee is None:
         employee = Default_Person(recent_list, idscan)
 
+    articles = news_cache.get_news()
+    weather_data = weather_cache.get_weather()
     return render_template("home.html", 
                            recent_people=recent_list,
                            scan=employee,
@@ -121,17 +127,24 @@ def home():
                            quote=quoteOTDay[0],
                            author=quoteOTDay[1],
                            wd=weather_data,
-                           news_articles=news.articles
+                           news_articles=articles
                            )
 
 
+@frontend.route("/refresher/news")
+def refresh_news():
+    return jsonify(news_cache.get_news())
+
+
+@frontend.route("/refresher/weather")
+def refresh_weather():
+    return jsonify(weather_cache.get_weather())
 
 
 @frontend.route('/settings', methods=['GET', 'POST'])
 def settings():
     if request.method == "POST":
         global config, weather_data, news
-        
         # Danger Zone
         action = request.form.get("action")
         if action:
@@ -154,9 +167,11 @@ def settings():
                 except Exception as e:
                     print(f"Failed to update {key}: {e}")
             if updated:
+                global news_cache, weather_cache
                 config = classSettings.Setting()
-                news = News_Report(config.country, config.news_key)
-                weather_data = Weather_Report(config.city, config.weather_key)
+                Change_City(config.city)
+                news_cache = News_Report()
+                weather_cache = Weather_Report()
 
         # color updates dynamically
         if request.form.get("form_type") == "colors":
@@ -213,8 +228,6 @@ def settings():
     return render_template("settings.html", cf=config)
 
 
-
-
 @frontend.route('/search', methods=['GET', 'POST'])
 def search():
     search = session.get('last_search')
@@ -247,6 +260,7 @@ def search():
         search_result = search_result,
         )
     
+
 @frontend.route('/reports', methods=['GET', 'POST'])
 def reports():
     current = Reports()
