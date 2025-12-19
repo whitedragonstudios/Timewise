@@ -6,23 +6,16 @@ from classHandler import Handler
 class Update_Weather():
     def __init__(self, autorun = True):
         self.user_handle = Handler("user")
-        
-        # FIXED: Use ORDER BY to ensure consistent ordering of results
         db = self.user_handle.send_query(
             "SELECT value FROM config_database WHERE key IN ('weather_key', 'lon', 'lat', 'city', 'state', 'country') ORDER BY key;"
         )
-        
-        # After ORDER BY key, the order will be alphabetical: city, country, lat, lon, state, weather_key
-        # So we need to access them in this order:
         self.city = db[0][0]        # city
         self.country = db[1][0]     # country
         self.latitude = db[2][0]    # lat
         self.longitude = db[3][0]   # lon
         self.state = db[4][0]       # state
         self.weather_key = db[5][0] # weather_key
-        
         print(f"Weather config loaded: {self.city}, {self.state}, {self.country} (lat={self.latitude}, lon={self.longitude})")
-        
         if autorun:
             response = self.api_request()
             # Once gps is retrieved a second call to get_weather is performed
@@ -40,19 +33,16 @@ class Update_Weather():
                 f"https://api.openweathermap.org/data/2.5/weather?lat={self.latitude}&lon={self.longitude}&appid={self.weather_key}",
                 timeout=10
             ).json()
-            
             # Check if API returned an error
             if 'cod' in WEATHER_response and WEATHER_response['cod'] != 200:
                 error_msg = WEATHER_response.get('message', 'Unknown error')
                 print(f"ERROR: Weather API returned error code {WEATHER_response['cod']}: {error_msg}")
                 return self.error_data()
-            
             # Verify response has required fields
             if 'weather' not in WEATHER_response or 'main' not in WEATHER_response:
                 print(f"ERROR: Invalid weather API response structure: {WEATHER_response}")
                 return self.error_data()
-            
-            print(f"✓ Successfully fetched weather data")
+            print(f"Successfully fetched weather data")
             return WEATHER_response
             
         except requests.exceptions.Timeout:
@@ -95,7 +85,6 @@ class Update_Weather():
         except Exception as e:
             print(f"ERROR: Exception checking weather response: {e}")
             data = self.error_data()
-        
         # response is formatted for direct output.
         try:
             description = data['weather'][0]['description'].title()
@@ -108,15 +97,11 @@ class Update_Weather():
             temp = f"{min_temp} - {max_temp}"
             humid = data['main']['humidity']
             clouds = data['clouds']['all']
-            
             # Handle missing wind direction gracefully
             wind_deg = data.get('wind', {}).get('deg', 0)
             wind_speed = data.get('wind', {}).get('speed', 0)
             dir = self.wind_direction(wind_deg)
             wind = f"{dir} {int(wind_speed)}mp/h"
-            
-            print(f"✓ Parsed weather: {description}, {temp}°F, {wind}")
-            
         except (KeyError, TypeError, ValueError) as e:
             print(f"ERROR: Failed to parse weather data: {e}")
             # Set default error values
@@ -142,12 +127,12 @@ class Update_Weather():
         }
         return stored_weather
 
+
     def save_weather(self, data):
         if data["description"] != "API Error":
             try:
                 self.user_handle = Handler("user")
                 self.user_handle.send_command("DELETE FROM weather_database")
-                
                 saved_count = 0
                 for k, v in data.items():
                     try:
@@ -155,14 +140,12 @@ class Update_Weather():
                         saved_count += 1
                     except Exception as e:
                         print(f"ERROR: Failed to save weather field {k}={v}: {e}")
-                
                 self.user_handle.send_command("UPDATE updates_database SET value = NOW() WHERE key = 'weather';")
-                print(f"✓ Saved {saved_count} weather fields to database")
-                
+                print(f"Saved {saved_count} weather fields to database")
             except Exception as e:
                 print(f"ERROR: Failed to save weather to database: {e}")
         else:
-            print("WARNING: API Error - keeping old weather data in database")
+            print("Keeping old weather data in database")
 
 
     def error_data(self):
@@ -187,7 +170,6 @@ class Weather_Report():
         self.humid = "N/A"
         self.clouds = "N/A"
         self.wind = "N/A"
-        
         if autorun:
             self.get_weather()
 
@@ -196,18 +178,15 @@ class Weather_Report():
         user_handle = Handler("user")
         try:
             last = user_handle.send_query("SELECT value FROM updates_database WHERE key = 'weather'")
-            
             if not last or len(last) == 0:
-                print("WARNING: No weather update timestamp found")
                 return self.error_data()
-            
             if last[0][0] != self.last_loaded:
                 self.last_loaded = last[0][0]
                 try:
                     data = user_handle.send_query("SELECT * FROM weather_database")
                     data = dict(data)
                     report = self.assign(data)
-                    print(f"✓ Weather cache refreshed at {self.last_loaded}")
+                    print(f"Weather cache refreshed at {self.last_loaded}")
                     return report
                 except Exception as e:
                     print(f"ERROR: Failed to load weather from database: {e}")
@@ -244,9 +223,7 @@ class Weather_Report():
             self.humid = data.get('humid', 'N/A')
             self.clouds = data.get('clouds', 'N/A')
             self.wind = data.get('wind', 'N/A')
-            
-            print(f"✓ Weather assigned: {self.city}, {self.state} - {self.description}")
-            
+            print(f"Weather assigned: {self.city}, {self.state} - {self.description}")
         except (KeyError, TypeError, ValueError) as e:
             print(f"ERROR: Failed to assign weather data: {e}")
             return self.error_data()

@@ -5,20 +5,13 @@ from classHandler import Handler
 class Update_News():
     def __init__(self, autorun = True):
         self.user_handle = Handler("user")
-        
-        # FIXED: Use ORDER BY to ensure consistent ordering of results
         db = self.user_handle.send_query(
             "SELECT value FROM config_database WHERE key IN ('country', 'news_key', 'banned') ORDER BY key;"
         )
-        
-        # After ORDER BY key, the order will be: banned, country, news_key (alphabetical)
-        # So we need to access them in this order:
         self.banned_list = db[0][0].split(",") if db[0][0] else []  # banned
         self.country = db[1][0]  # country
         self.news_key = db[2][0]  # news_key
-        
         print(f"News config loaded: country={self.country}, banned_sources={len(self.banned_list)}")
-        
         # A banned list can be passed to not display certain news sources defaults to an empty list
         if autorun:
             response = self.api_request()
@@ -184,19 +177,14 @@ class News_Report():
         user_handle = Handler("user")
         try:
             last = user_handle.send_query("SELECT value FROM updates_database WHERE key = 'news'")
-            
             if not last or len(last) == 0:
-                print("WARNING: No news update timestamp found")
                 return []
-            
             # Check if we need to reload
             if last[0][0] != self.last_loaded:
                 self.articles = self.reload(user_handle)
                 self.last_loaded = last[0][0]
-                print(f"✓ News cache refreshed at {self.last_loaded}")
-            
+                print(f"News cache refreshed at {self.last_loaded}")
             return self.articles
-            
         except Exception as e:
             print(f"ERROR: Failed to get news: {e}")
             return []
@@ -206,17 +194,13 @@ class News_Report():
     def reload(self, handler):
         try:
             rows = handler.send_query("SELECT src, art, url FROM news_database ORDER BY id")
-            
             if not rows:
-                print("WARNING: No news articles in database")
                 return []
-            
             articles = [
                 {"src": r[0], "art": r[1], "url": r[2]}
                 for r in rows
             ]
-            
-            print(f"✓ Loaded {len(articles)} articles from database")
+            print(f"Loaded {len(articles)} articles from database")
             return articles
             
         except Exception as e:
